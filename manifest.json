@@ -1,0 +1,13 @@
+{
+  "name": "Mon lexique",
+  "short_name": "Mon lexique",
+  "description": "Vocabulary drill for the Government of Canada Second Language Evaluation (French).",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F6F8FA",
+  "theme_color": "#1D5E86",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

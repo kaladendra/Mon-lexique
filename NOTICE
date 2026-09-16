@@ -1,0 +1,52 @@
+MON LEXIQUE — THIRD-PARTY CONTENT AND ATTRIBUTION
+=================================================
+
+The MIT Licence in LICENSE covers the code, the interface, and the vocabulary
+cards compiled by the author (roughly 300 of them).
+
+It does NOT cover the remainder of the vocabulary, which carries different
+terms.
+
+
+CROWN COPYRIGHT MATERIAL
+------------------------
+
+Approximately 2,500 cards are drawn from Government of Canada publications:
+
+  · Lexique — Programme de français langue seconde, Niveaux A et B
+    Catalogue SC102-2/1-2-2005F
+    Canada School of Public Service, 2005
+
+  · Aide-mémoire linguistiques, course C285 — Préparation à l'évaluation du
+    français langue seconde : compétence orale, niveaux B et C
+    Canada School of Public Service, 2011
+
+© His Majesty the King in Right of Canada.
+
+Both are public, archived Government of Canada publications. Their terms
+permit reproduction, in whole or in part and by any means, for PERSONAL OR
+PUBLIC purposes, but NOT FOR COMMERCIAL ones.
+
+
+WHAT THIS MEANS IN PRACTICE
+---------------------------
+
+This package is free for personal and educational use.
+
+Commercial distribution is NOT permitted — not because the author objects, but
+because the Crown material's own terms do not allow it, and the author cannot
+grant permissions he does not hold.
+
+If you reuse only the code — the drill engine, the scheduler, the interface —
+with your own vocabulary data, the MIT Licence alone applies and you may do
+as you like, including commercially.
+
+
+NO AFFILIATION
+--------------
+
+This project is not affiliated with, nor endorsed by, the Canada School of
+Public Service or the Public Service Commission of Canada.
+
+It contains NO protected test content. Actual Second Language Evaluation test
+material is confidential and none of it appears here.
