@@ -19,7 +19,8 @@
 KEEP IT ON YOUR PHONE
 ------------------------------------------------------------------------------
 
-  It works as a home-screen app - full screen, no browser bars, offline.
+  It works as a home-screen app - full screen, no browser bars, and it works
+  offline once you have opened it once (it caches itself on first visit).
 
   iPhone / iPad (Safari)
       Open the link, tap Share (the square with an arrow at the bottom),

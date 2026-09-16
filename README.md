@@ -16,7 +16,8 @@ own; you don't need any of it.
 
 ## Keep it on your phone
 
-It works as a home-screen app — full screen, no browser bars, works offline.
+It works as a home-screen app — full screen, no browser bars, and **offline once you've
+opened it once** (it caches itself on first visit).
 
 **iPhone / iPad** (Safari): open the link → **Share** button → scroll down →
 **Add to Home Screen** → **Add**.
