@@ -29,6 +29,7 @@
   the Public Service Commission of Canada. Contains no protected test content.
 
   Canonical copy: https://kaladendra.github.io/Mon-lexique/
+  Source and issues: https://github.com/kaladendra/Mon-lexique
   This file carries an integrity check; see the About panel.
 -->
 <title>Mon lexique</title>
@@ -275,7 +276,7 @@ dialog#help::backdrop{background:rgba(10,14,20,.55)}
 
 <script>
 const VERSION = "1.0", BUILT = "2026-09-15";
-const CANONICAL = "https://kaladendra.github.io/Mon-lexique/";
+const CANONICAL = "https://kaladendra.github.io/Mon-lexique/", SOURCE = "https://github.com/kaladendra/Mon-lexique";
 const DEFAULT_DECK = "toolkit";
 const DATA_HASH = "14qp8zf", DATA_COUNT = 2861;
 const TOPICS = {"1":{"fr":"S’identifier et identifier des personnes","en":"To identify yourself and other people"},"2":{"fr":"Identifier des objets ou des documents","en":"To identify objects or documents"},"3":{"fr":"Exprimer des relations d’appartenance","en":"To express relationships of belonging"},"4":{"fr":"Exprimer des relations de possession","en":"To express ownership"},"5":{"fr":"Indiquer où est une personne, un objet/document, un lieu","en":"To indicate where a person, an object, a document, or a place is"},"6":{"fr":"Indiquer des données chiffrées","en":"To use numbers"},"7":{"fr":"Orienter quelqu’un dans l’espace","en":"To give directions"},"8":{"fr":"Situer un événement dans le temps","en":"To give times and dates"},"9":{"fr":"Situer un événement dans le temps : passé, présent, futur","en":"To situate an event in time: past, present, future"},"10":{"fr":"Assigner des tâches","en":"To assign work"},"11":{"fr":"Préciser comment accomplir une tâche","en":"To explain how to perform a task"},"12":{"fr":"Indiquer la répartition et une quantité non numérique","en":"To indicate distribution and general quantity"},"13":{"fr":"Fournir de l’information sur un événement ou une habitude passés","en":"To give information about past events and habits"},"14":{"fr":"S’informer ou informer d’un événement","en":"To give or ask information about events and happenings"},"15":{"fr":"S’informer ou informer d’une requête ou de l’obtention de quelque chose","en":"To give or to ask for information about requests or obtaining something"},"16":{"fr":"Faire une offre et réagir à une offre","en":"To make and to respond to offers"},"17":{"fr":"S’informer ou informer de la présence ou de la disponibilité de personnes ou de choses","en":"To give or to ask for information about the presence or availability of people or things"},"18":{"fr":"Exprimer une volonté, un souhait, des goûts, des préférences","en":"To express will (intention), hopes and wishes, taste (liking) and preference"},"19":{"fr":"Évaluer des choses","en":"To describe things and to express opinions about them"},"20":{"fr":"Évaluer des personnes","en":"To express opinions about people"},"21":{"fr":"(Se) renseigner sur l’application de normes et de règlements","en":"To find out how to apply standards and regulations"},"22":{"fr":"Préciser les modalités d’exécution (temps) d’un travail","en":"To give details about the time factors involved in a job"},"23":{"fr":"Préciser les conditions de réalisation d’un projet","en":"To give details about how a project is carried out"},"24":{"fr":"Situer des événements par rapport à d’autres","en":"To situate events in relation to each other"},"25":{"fr":"Indiquer les étapes d’un processus","en":"To indicate the steps in a process"},"26":{"fr":"Décrire des déplacements","en":"To describe movement"},"27":{"fr":"Décrire une tâche (opérations physiques)","en":"To describe tasks (physical operations)"},"28":{"fr":"Préciser l’importance d’une directive","en":"To explain the importance of an instruction"},"29":{"fr":"Apprécier les capacités ou les compétences de quelqu’un","en":"To assess the abilities or competencies of someone"},"30":{"fr":"Permettre ou interdire quelque chose","en":"To permit or forbid something"},"31":{"fr":"Exprimer la volonté, le souhait","en":"To express will or desire"},"32":{"fr":"Formuler des conditions","en":"To formulate conditions"},"33":{"fr":"Exprimer un choix","en":"To express choice"},"34":{"fr":"Proposer des solutions à un problème","en":"To put forward solutions to a problem"},"35":{"fr":"Faire des prévisions","en":"To make forecasts"},"36":{"fr":"Demander ou donner de l’information sur un projet","en":"To ask or give information about projects"},"37":{"fr":"Décrire la démarche suivie dans la réalisation d’un projet","en":"To describe the procedure followed in a project"},"38":{"fr":"Exposer le pourquoi et les effets d’une décision, d’une action, d’un événement, d’une situation","en":"To explain the reasons for and results of a decision, an action, an event or a situation"},"39":{"fr":"Évaluer un changement proposé","en":"To evaluate a proposed change"},"40":{"fr":"Persuader quelqu’un de quelque chose","en":"To convince someone of something"}};
@@ -632,10 +633,19 @@ function applyLang(){
   }
   const cel = $("canon");
   if (cel){
-    cel.innerHTML = CANONICAL && CANONICAL.indexOf("://") > 0
-      ? (fr ? "Copie de référence : " : "Canonical copy: ") + `<a href="${CANONICAL}" style="color:var(--accent)">${CANONICAL}</a>`
+    const bits = [];
+    if (SOURCE && SOURCE.indexOf("://") > 0)
+      bits.push(`<a href="${SOURCE}" style="color:var(--accent)">` +
+        (fr ? "Code source, licence et corrections" : "Source code, licence and corrections") + `</a>`);
+    if (CANONICAL && CANONICAL.indexOf("://") > 0)
+      bits.push(`<a href="${CANONICAL}" style="color:var(--accent)">` +
+        (fr ? "Copie de référence" : "Canonical copy") + `</a>`);
+    cel.innerHTML = bits.length
+      ? bits.join(" &nbsp;·&nbsp; ") + "<br><span style=\"opacity:.7\">" +
+        (fr ? "Une erreur de traduction ? Ouvrez un « issue » — c'est le plus rapide."
+            : "Spotted a wrong translation? Open an issue — that's the fastest route.") + "</span>"
       : (fr ? "<i>Copie de référence : à définir.</i>" : "<i>Canonical copy: not yet set.</i>");
-    cel.style.fontSize = "12.5px";
+    cel.style.fontSize = "12.5px"; cel.style.lineHeight = "1.7";
   }
   $("panelTitle").textContent = t.panel;
   $("lblDir").textContent = t.dirLbl; $("lblSession").textContent = t.sessLbl;
