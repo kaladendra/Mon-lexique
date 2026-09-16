@@ -14,6 +14,19 @@ Rename it to anything you like and double-click it. Everything else in this
 repository is either supporting material or icons the browser fetches on its
 own; you don't need any of it.
 
+## Keep it on your phone
+
+It works as a home-screen app — full screen, no browser bars, works offline.
+
+**iPhone / iPad** (Safari): open the link → **Share** button → scroll down →
+**Add to Home Screen** → **Add**.
+
+**Android** (Chrome): ⋮ menu → **Add to Home screen** (or **Install app**).
+
+Do this *before* you start drilling. Your progress is stored by whichever
+browser you used, so a home-screen copy added later may start from scratch —
+and each device keeps its own progress regardless.
+
 ## What's in it
 
 **2,861 cards**, organised the way the CSPS program is:

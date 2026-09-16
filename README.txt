@@ -16,6 +16,24 @@
 
 
 ------------------------------------------------------------------------------
+KEEP IT ON YOUR PHONE
+------------------------------------------------------------------------------
+
+  It works as a home-screen app - full screen, no browser bars, offline.
+
+  iPhone / iPad (Safari)
+      Open the link, tap Share (the square with an arrow at the bottom),
+      scroll down, tap "Add to Home Screen", then Add.
+
+  Android (Chrome)
+      Menu, then "Add to Home screen" (or "Install app").
+
+  Do this BEFORE you start drilling. Your progress is stored by whichever
+  browser you used, so a home-screen copy added later may start from
+  scratch - and each device keeps its own progress regardless.
+
+
+------------------------------------------------------------------------------
 WHAT'S IN IT
 ------------------------------------------------------------------------------
 
