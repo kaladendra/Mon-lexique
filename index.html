@@ -639,11 +639,11 @@ function check(giveUp){
   awaiting = true; $("answer").readOnly = true; sess.seen++;
   if (res.v === "ok") sess.ok++; else if (res.v === "miss") sess.miss++;
   schedule(cur, res.v);
+  const t = T(), good = state.dir === "ef" ? cur.fr : cur.en, typed = $("answer").value.trim();
   hist.push({card: cur, typed, v: res.v, why: res.why});
   if (hist.length > HIST_MAX) hist.shift();
   paintNav();
   lastRes = res;
-  const t = T(), good = state.dir === "ef" ? cur.fr : cur.en, typed = $("answer").value.trim();
   const lab = res.v === "ok" ? t.vOk : res.v === "miss" ? t.vMiss
     : {accent: t.vAccent, article: t.vArticle, both: t.vBoth, typo: t.vTypo}[res.why] || t.vTypo;
   let note = "";
@@ -791,6 +791,14 @@ function restoreLive(){
   $("tagSched").textContent = v.sched; $("accents").hidden = v.accOff;
   paintStar();
 }
+
+window.addEventListener("error", e => {
+  // A silent throw once hid a bug for four rounds. Never again: surface it in the card.
+  const box = $("verdictSlot");
+  if (box) box.innerHTML = '<div class="verdict miss"><div class="lab">Erreur</div>' +
+    '<div class="note">' + String(e.message || e.error || "?").slice(0, 140) + '</div></div>';
+  try { dbg("ERROR " + (e.message || "")); } catch(_){}
+});
 
 /* ---- diagnostics: tap the "cards seen" number five times to toggle ---- */
 let DBG = false, dbgLines = [];
