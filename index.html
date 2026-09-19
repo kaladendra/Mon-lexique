@@ -177,9 +177,6 @@ details.panel[open]>summary::after{content:"▴"}
 .chip:hover{border-color:var(--accent)}
 .chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
 .chip small{font-family:"IBM Plex Mono",monospace;font-size:10.5px;opacity:.72}
-#dbg{font-family:"IBM Plex Mono",monospace;font-size:10.5px;line-height:1.5;white-space:pre-wrap;
-  background:var(--sunk);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;
-  color:var(--ink-2);margin:0;overflow-x:auto}
 .foot{font-size:11.5px;color:var(--ink-3);text-align:center;line-height:1.7}
 .foot b{color:var(--ink-2);font-weight:600}
 .sync{display:inline-flex;align-items:center;gap:5px}
@@ -280,8 +277,6 @@ dialog#help::backdrop{background:rgba(10,14,20,.55)}
       </div>
     </div>
   </details>
-
-  <pre id="dbg" hidden></pre>
 
   <div class="foot">
     <span class="sync"><span class="dot" id="syncDot"></span><span id="syncTxt"></span></span><br>
@@ -665,7 +660,7 @@ function check(giveUp){
   // This is the only guard that does not depend on guessing how iOS synthesises taps.
   $("go").disabled = true;
   clearTimeout(reopenTimer);
-  reopenTimer = setTimeout(() => { $("go").disabled = false; dbg("button re-enabled"); }, READ_WINDOW);
+  reopenTimer = setTimeout(() => { $("go").disabled = false; }, READ_WINDOW);
   $("go").textContent = t.nextBtn;
   render();
 }
@@ -797,38 +792,7 @@ window.addEventListener("error", e => {
   const box = $("verdictSlot");
   if (box) box.innerHTML = '<div class="verdict miss"><div class="lab">Erreur</div>' +
     '<div class="note">' + String(e.message || e.error || "?").slice(0, 140) + '</div></div>';
-  try { dbg("ERROR " + (e.message || "")); } catch(_){}
 });
-
-/* ---- diagnostics: tap the "cards seen" number five times to toggle ---- */
-let DBG = false, dbgLines = [];
-function dbg(msg){
-  if (!DBG) return;
-  const t = (Date.now() % 100000) / 1000;
-  dbgLines.unshift(t.toFixed(2) + "  " + msg);
-  dbgLines = dbgLines.slice(0, 14);
-  const el = $("dbg"); if (el) el.textContent = dbgLines.join("\n");
-}
-(function(){
-  let taps = 0, last = 0;
-  $("sSeen").addEventListener("click", () => {
-    const now = Date.now();
-    taps = (now - last < 800) ? taps + 1 : 1; last = now;
-    if (taps >= 5){
-      taps = 0; DBG = !DBG;
-      $("dbg").hidden = !DBG;
-      dbgLines = [DBG ? (lang === "fr"
-        ? "Journal de diagnostic ACTIVÉ. Reproduisez le problème, puis faites une capture d'écran."
-        : "Diagnostic log ENABLED. Reproduce the problem, then take a screenshot.")
-        : ""];
-      $("dbg").textContent = dbgLines[0];
-    }
-  });
-  ["pointerdown","pointerup","click","touchstart","touchend"].forEach(ev =>
-    $("go").addEventListener(ev, e =>
-      dbg(ev + (e.pointerType ? "/" + e.pointerType : "") +
-          "  awaiting=" + (awaiting ? 1 : 0) + " dis=" + ($("go").disabled ? 1 : 0)), true));
-})();
 
 /* ---------------- events ---------------- */
 "é è ê ë à â ä î ï ô ö û ù ü ç œ".split(" ").forEach(ch => {
@@ -864,10 +828,10 @@ $("go").onclick = () => {
   if (awaiting){
     // Only a gesture that BEGAN AFTER the verdict appeared may advance. This rejects
     // ghost clicks and any tap whose click was swallowed by the keyboard and delivered late.
-    if (armedAt <= shownAt){ dbg("BLOCKED: gesture predates verdict"); return; }
-    dbg("ADVANCE"); armedAt = 0; next(); render();
+    if (armedAt <= shownAt) return;
+    armedAt = 0; next(); render();
   } else {
-    dbg("CHECK"); armedAt = 0; check(false);
+    armedAt = 0; check(false);
   }
 };
 $("skip").onclick = () => { if (hpos === -1 && !awaiting) check(true); };
