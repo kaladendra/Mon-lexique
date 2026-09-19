@@ -80,6 +80,7 @@
 body{background:var(--paper);color:var(--ink);
   font-family:"Libre Franklin",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body,.wrap,.card,.body{overflow-anchor:none}
 .wrap{max-width:720px;margin:0 auto;padding:20px 18px 64px;display:flex;flex-direction:column;gap:16px}
 .head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .brand{font-family:"Instrument Serif",Georgia,serif;font-size:29px;line-height:1.1;letter-spacing:.2px}
@@ -246,9 +247,9 @@ dialog#help::backdrop{background:rgba(10,14,20,.55)}
         <div class="prompt" id="prompt">…</div>
         <div class="hint" id="hint" hidden></div>
       </div>
+      <div id="verdictSlot"></div>
       <input type="text" id="answer" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
       <div class="accents" id="accents"></div>
-      <div id="verdictSlot"></div>
       <div class="row">
         <button class="btn" id="go"></button>
         <button class="btn ghost" id="skip"></button>
@@ -656,6 +657,7 @@ function check(giveUp){
      <div class="ans">${esc(good)}</div>${note?`<div class="note">${note}</div>`:""}
      ${cur.h && state.dir === "ef" ? `<div class="note">${esc(cur.h)}</div>` : ""}</div>`;
   if (cur.h && cur.h.startsWith("≠")) $("hint").hidden = true;
+  try { $("verdictSlot").scrollIntoView({block: "nearest", behavior: "instant"}); } catch(e){}
   $("tagSched").textContent = nextLabel(cur);
   shownAt = Date.now();
   if (!("ontouchstart" in window)) $("answer").blur();
@@ -847,7 +849,7 @@ function toggleStar(){
    animation). So an advance requires a real gesture: a pointerdown on the button, or a keypress.
    Synthesized clicks carry no pointerdown, so they are ignored. */
 let armedAt = 0, reopenTimer = null;
-const READ_WINDOW = 700;   // ms the answer stays on screen before Suivante can be pressed
+const READ_WINDOW = 350;   // brief, only to absorb an accidental double-tap
 $("go").addEventListener("pointerdown", () => { armedAt = Date.now(); });
 $("go").onclick = () => {
   if (hpos !== -1){ goFwd(); return; }            // reviewing: step forward instead
