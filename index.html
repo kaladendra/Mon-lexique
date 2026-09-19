@@ -147,6 +147,7 @@ input[type=text][readonly]{opacity:.7}
 .btn{font-family:inherit;font-size:14px;font-weight:600;padding:10px 17px;border-radius:var(--r);
   border:1px solid transparent;cursor:pointer;background:var(--accent);color:#fff}
 .btn:hover{background:var(--accent-ink)}
+.btn:disabled{background:var(--accent);opacity:1;cursor:default}
 .btn.ghost{background:transparent;color:var(--ink-2);border-color:var(--line-2)}
 .btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
 .kbd{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);border:1px solid var(--line-2);
@@ -175,6 +176,9 @@ details.panel[open]>summary::after{content:"▴"}
 .chip:hover{border-color:var(--accent)}
 .chip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
 .chip small{font-family:"IBM Plex Mono",monospace;font-size:10.5px;opacity:.72}
+#dbg{font-family:"IBM Plex Mono",monospace;font-size:10.5px;line-height:1.5;white-space:pre-wrap;
+  background:var(--sunk);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;
+  color:var(--ink-2);margin:0;overflow-x:auto}
 .foot{font-size:11.5px;color:var(--ink-3);text-align:center;line-height:1.7}
 .foot b{color:var(--ink-2);font-weight:600}
 .sync{display:inline-flex;align-items:center;gap:5px}
@@ -275,6 +279,8 @@ dialog#help::backdrop{background:rgba(10,14,20,.55)}
       </div>
     </div>
   </details>
+
+  <pre id="dbg" hidden></pre>
 
   <div class="foot">
     <span class="sync"><span class="dot" id="syncDot"></span><span id="syncTxt"></span></span><br>
@@ -623,7 +629,7 @@ function next(){
   $("tagSched").textContent = nextLabel(cur);
   $("accents").hidden = state.dir !== "ef";
   document.querySelector(".card").classList.remove("reviewing");
-  hpos = -1; armedAt = 0; liveSnap = null; paintNav(); paintStar(); inp.focus();
+  hpos = -1; armedAt = 0; liveSnap = null; clearTimeout(reopenTimer); $("go").disabled = false; paintNav(); paintStar(); inp.focus();
 }
 function check(giveUp){
   if (!cur) return;
@@ -653,6 +659,11 @@ function check(giveUp){
   $("tagSched").textContent = nextLabel(cur);
   shownAt = Date.now();
   if (!("ontouchstart" in window)) $("answer").blur();
+  // A disabled form control is not a click target — no event of any origin reaches it.
+  // This is the only guard that does not depend on guessing how iOS synthesises taps.
+  $("go").disabled = true;
+  clearTimeout(reopenTimer);
+  reopenTimer = setTimeout(() => { $("go").disabled = false; dbg("button re-enabled"); }, READ_WINDOW);
   $("go").textContent = t.nextBtn;
   render();
 }
@@ -779,6 +790,33 @@ function restoreLive(){
   paintStar();
 }
 
+/* ---- diagnostics: tap the "cards seen" number five times to toggle ---- */
+let DBG = false, dbgLines = [];
+function dbg(msg){
+  if (!DBG) return;
+  const t = (Date.now() % 100000) / 1000;
+  dbgLines.unshift(t.toFixed(2) + "  " + msg);
+  dbgLines = dbgLines.slice(0, 14);
+  const el = $("dbg"); if (el) el.textContent = dbgLines.join("\n");
+}
+(function(){
+  let taps = 0, last = 0;
+  $("sSeen").addEventListener("click", () => {
+    const now = Date.now();
+    taps = (now - last < 800) ? taps + 1 : 1; last = now;
+    if (taps >= 5){
+      taps = 0; DBG = !DBG;
+      $("dbg").hidden = !DBG;
+      dbgLines = [DBG ? "log on — reproduce the bug, then screenshot" : ""];
+      $("dbg").textContent = dbgLines[0];
+    }
+  });
+  ["pointerdown","pointerup","click","touchstart","touchend"].forEach(ev =>
+    $("go").addEventListener(ev, e =>
+      dbg(ev + (e.pointerType ? "/" + e.pointerType : "") +
+          "  awaiting=" + (awaiting ? 1 : 0) + " dis=" + ($("go").disabled ? 1 : 0)), true));
+})();
+
 /* ---------------- events ---------------- */
 "é è ê ë à â ä î ï ô ö û ù ü ç œ".split(" ").forEach(ch => {
   const b = document.createElement("button"); b.type = "button"; b.textContent = ch;
@@ -805,17 +843,18 @@ function toggleStar(){
    verdict. A timing guard cannot catch it reliably (the ghost arrives after the keyboard
    animation). So an advance requires a real gesture: a pointerdown on the button, or a keypress.
    Synthesized clicks carry no pointerdown, so they are ignored. */
-let armedAt = 0;
+let armedAt = 0, reopenTimer = null;
+const READ_WINDOW = 700;   // ms the answer stays on screen before Suivante can be pressed
 $("go").addEventListener("pointerdown", () => { armedAt = Date.now(); });
 $("go").onclick = () => {
   if (hpos !== -1){ goFwd(); return; }            // reviewing: step forward instead
   if (awaiting){
     // Only a gesture that BEGAN AFTER the verdict appeared may advance. This rejects
     // ghost clicks and any tap whose click was swallowed by the keyboard and delivered late.
-    if (armedAt <= shownAt) return;
-    armedAt = 0; next(); render();
+    if (armedAt <= shownAt){ dbg("BLOCKED: gesture predates verdict"); return; }
+    dbg("ADVANCE"); armedAt = 0; next(); render();
   } else {
-    armedAt = 0; check(false);
+    dbg("CHECK"); armedAt = 0; check(false);
   }
 };
 $("skip").onclick = () => { if (hpos === -1 && !awaiting) check(true); };
