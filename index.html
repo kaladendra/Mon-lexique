@@ -138,7 +138,7 @@ body{background:var(--paper);color:var(--ink);
 input[type=text]{width:100%;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:17px;padding:11px 13px;
   border:1.5px solid var(--line-2);border-radius:var(--r);background:var(--paper);color:var(--ink);outline:none}
 input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
-input[type=text][disabled]{opacity:.75}
+input[type=text][readonly]{opacity:.7}
 .accents{display:flex;flex-wrap:wrap;gap:5px}
 .accents button{font-family:"IBM Plex Mono",monospace;font-size:14px;min-width:32px;padding:5px 0;
   border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink-2);cursor:pointer}
@@ -242,7 +242,7 @@ dialog#help::backdrop{background:rgba(10,14,20,.55)}
         <div class="prompt" id="prompt">…</div>
         <div class="hint" id="hint" hidden></div>
       </div>
-      <input type="text" id="answer" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <input type="text" id="answer" enterkeyhint="go" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
       <div class="accents" id="accents"></div>
       <div id="verdictSlot"></div>
       <div class="row">
@@ -602,7 +602,7 @@ function paintStar(){
 }
 function next(){
   awaiting = false; $("verdictSlot").innerHTML = "";
-  const inp = $("answer"); inp.value = ""; inp.disabled = false;
+  const inp = $("answer"); inp.value = ""; inp.readOnly = false;
   $("go").textContent = T().check;
   if (!queue.length) buildQueue();
   cur = queue.shift() || null;
@@ -623,13 +623,13 @@ function next(){
   $("tagSched").textContent = nextLabel(cur);
   $("accents").hidden = state.dir !== "ef";
   document.querySelector(".card").classList.remove("reviewing");
-  hpos = -1; armed = false; liveSnap = null; paintNav(); paintStar(); inp.focus();
+  hpos = -1; armedAt = 0; liveSnap = null; paintNav(); paintStar(); inp.focus();
 }
 function check(giveUp){
   if (!cur) return;
   if (awaiting){ next(); render(); return; }
   const res = giveUp ? {v:"miss"} : judge($("answer").value, state.dir === "ef" ? cur.fv : cur.ev);
-  awaiting = true; $("answer").disabled = true; sess.seen++;
+  awaiting = true; $("answer").readOnly = true; sess.seen++;
   if (res.v === "ok") sess.ok++; else if (res.v === "miss") sess.miss++;
   schedule(cur, res.v);
   hist.push({card: cur, typed, v: res.v, why: res.why});
@@ -652,6 +652,7 @@ function check(giveUp){
   if (cur.h && cur.h.startsWith("≠")) $("hint").hidden = true;
   $("tagSched").textContent = nextLabel(cur);
   shownAt = Date.now();
+  if (!("ontouchstart" in window)) $("answer").blur();
   $("go").textContent = t.nextBtn;
   render();
 }
@@ -725,7 +726,7 @@ function showReview(){
   document.querySelector(".card").classList.add("reviewing");
   $("prompt").textContent = state.dir === "ef" ? c.en : c.fr;
   $("hint").textContent = c.h || ""; $("hint").hidden = !c.h;
-  $("answer").value = h.typed || ""; $("answer").disabled = true;
+  $("answer").value = h.typed || ""; $("answer").readOnly = true;
   $("accents").hidden = true;
   $("tagDeck").textContent = t.reviewing;
   const o = c.o ? c.o + " · " + topicLabel(c.o) : "";
@@ -759,7 +760,7 @@ const LIVE_KEYS = ["prompt","verdictSlot","answer","hint","go","tagDeck","tagObj
 function snapLive(){
   liveSnap = {
     prompt: $("prompt").textContent, verdict: $("verdictSlot").innerHTML,
-    answer: $("answer").value, answerOff: $("answer").disabled,
+    answer: $("answer").value, answerOff: $("answer").readOnly,
     hint: $("hint").textContent, hintOff: $("hint").hidden,
     go: $("go").textContent, deck: $("tagDeck").textContent,
     obj: $("tagObj").textContent, objOff: $("tagObj").hidden,
@@ -770,7 +771,7 @@ function restoreLive(){
   if (!liveSnap){ next(); return; }
   const v = liveSnap;
   $("prompt").textContent = v.prompt; $("verdictSlot").innerHTML = v.verdict;
-  $("answer").value = v.answer; $("answer").disabled = v.answerOff;
+  $("answer").value = v.answer; $("answer").readOnly = v.answerOff;
   $("hint").textContent = v.hint; $("hint").hidden = v.hintOff;
   $("go").textContent = v.go; $("tagDeck").textContent = v.deck;
   $("tagObj").textContent = v.obj; $("tagObj").hidden = v.objOff;
@@ -804,17 +805,17 @@ function toggleStar(){
    verdict. A timing guard cannot catch it reliably (the ghost arrives after the keyboard
    animation). So an advance requires a real gesture: a pointerdown on the button, or a keypress.
    Synthesized clicks carry no pointerdown, so they are ignored. */
-let armed = false;
-const ADVANCE_GUARD = 250;                       // second line of defence, for key repeat
-$("go").addEventListener("pointerdown", () => { armed = true; });
+let armedAt = 0;
+$("go").addEventListener("pointerdown", () => { armedAt = Date.now(); });
 $("go").onclick = () => {
   if (hpos !== -1){ goFwd(); return; }            // reviewing: step forward instead
   if (awaiting){
-    if (!armed) return;                           // ghost click — no gesture preceded it
-    if (Date.now() - shownAt < ADVANCE_GUARD) return;
-    armed = false; next(); render();
+    // Only a gesture that BEGAN AFTER the verdict appeared may advance. This rejects
+    // ghost clicks and any tap whose click was swallowed by the keyboard and delivered late.
+    if (armedAt <= shownAt) return;
+    armedAt = 0; next(); render();
   } else {
-    armed = false; check(false);
+    armedAt = 0; check(false);
   }
 };
 $("skip").onclick = () => { if (hpos === -1 && !awaiting) check(true); };
@@ -826,11 +827,11 @@ $("helpBtn").onclick = () => $("help").showModal();
 $("helpClose").onclick = () => $("help").close();
 $("help").addEventListener("click", e => { if (e.target === $("help")) $("help").close(); });
 $("lang").querySelectorAll("[data-lang]").forEach(b => b.onclick = () => setLang(b.dataset.lang));
-$("answer").addEventListener("keydown", e => { if (e.key === "Enter" && !e.repeat){ e.preventDefault(); armed = true; $("go").click(); } });
+$("answer").addEventListener("keydown", e => { if (e.key === "Enter" && !e.repeat){ e.preventDefault(); armedAt = Date.now(); $("go").click(); } });
 document.addEventListener("keydown", e => {
   if (e.key === "ArrowLeft"  && document.activeElement !== $("answer")){ e.preventDefault(); goBack(); return; }
   if (e.key === "ArrowRight" && document.activeElement !== $("answer")){ e.preventDefault(); goFwd(); return; }
-  if (e.key === "Enter" && !e.repeat && awaiting && document.activeElement !== $("answer")){ armed = true; $("go").click(); }
+  if (e.key === "Enter" && !e.repeat && awaiting && document.activeElement !== $("answer")){ armedAt = Date.now(); $("go").click(); }
   if (e.key === "Tab" && !e.shiftKey && document.activeElement === $("answer") && !$("answer").value){
     e.preventDefault(); setDir(state.dir === "ef" ? "fe" : "ef"); }
   if ((e.key === "s" || e.key === "S") && document.activeElement !== $("answer") && !$("help").open){
