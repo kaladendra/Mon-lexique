@@ -807,7 +807,10 @@ function dbg(msg){
     if (taps >= 5){
       taps = 0; DBG = !DBG;
       $("dbg").hidden = !DBG;
-      dbgLines = [DBG ? "log on — reproduce the bug, then screenshot" : ""];
+      dbgLines = [DBG ? (lang === "fr"
+        ? "Journal de diagnostic ACTIVÉ. Reproduisez le problème, puis faites une capture d'écran."
+        : "Diagnostic log ENABLED. Reproduce the problem, then take a screenshot.")
+        : ""];
       $("dbg").textContent = dbgLines[0];
     }
   });
