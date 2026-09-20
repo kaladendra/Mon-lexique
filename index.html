@@ -155,10 +155,10 @@ input[type=text][readonly]{opacity:.7}
   border-radius:5px;padding:1px 5px}
 .verdict{border-radius:var(--r);padding:13px 15px;display:flex;flex-direction:column;gap:6px;border-left:3px solid}
 .verdict.ok{background:var(--ok-wash);border-color:var(--ok)}
-.verdict.near{background:var(--near-wash);border-color:var(--near)}
+.verdict.near,.verdict.soft{background:var(--near-wash);border-color:var(--near)}
 .verdict.miss{background:var(--miss-wash);border-color:var(--miss)}
 .verdict .lab{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:700}
-.verdict.ok .lab{color:var(--ok)} .verdict.near .lab{color:var(--near)} .verdict.miss .lab{color:var(--miss)}
+.verdict.ok .lab{color:var(--ok)} .verdict.near .lab,.verdict.soft .lab{color:var(--near)} .verdict.miss .lab{color:var(--miss)}
 .verdict .ans{font-family:"Instrument Serif",Georgia,serif;font-size:25px;line-height:1.2}
 .verdict .note{font-size:13px;color:var(--ink-2)}
 .verdict .note s{color:var(--ink-3)}
@@ -300,6 +300,9 @@ const I18N = {
   enter:"Entrée", dirEF:"Anglais → Français", dirFE:"Français → Anglais",
   vOk:"Juste", vAccent:"Presque — accent", vTypo:"Presque — faute de frappe", vMiss:"Manqué",
   vArticle:"Presque — l'article", vBoth:"Presque — article et accent",
+  vForme:"Presque — la forme du mot", vPrep:"Presque — la préposition",
+  whyForme:"Le radical est bon, la forme ne l'est pas — ça compte comme une erreur.",
+  whyPrep:"Le mot est bon; il manque la préposition — ça compte comme une erreur.",
   whyArticle:"Le sens y est; c'est le déterminant qui diffère.",
   whyAccent:"Les mots sont bons; ce sont les accents.",
   back:"Carte précédente", fwd:"Carte suivante", reviewing:"révision",
@@ -360,6 +363,9 @@ const I18N = {
   enter:"Enter", dirEF:"English → French", dirFE:"French → English",
   vOk:"Right", vAccent:"Almost — accent", vTypo:"Almost — typo", vMiss:"Missed",
   vArticle:"Almost — the article", vBoth:"Almost — article and accent",
+  vForme:"Almost — the word form", vPrep:"Almost — the preposition",
+  whyForme:"The root is right, the form is not — this counts as an error.",
+  whyPrep:"Right word, missing preposition — this counts as an error.",
   whyArticle:"The sense is right; it's the article that differs.",
   whyAccent:"The words are right; it's the accents.",
   back:"Previous card", fwd:"Next card", reviewing:"reviewing",
@@ -448,6 +454,19 @@ function lev(a, b){
     [prev, cur] = [cur, prev]; }
   return prev[n];
 }
+/* French morphology, deliberately shallow: enough to spot "same word, wrong form"
+   (imprimante / imprimer) without pretending to be a real stemmer. */
+const PREP_RE = /\s+(a|de|d'|en|sur|avec|pour|dans|par|contre|au|aux)$/;   // deep-norm has stripped accents
+const dropPrep = w => w.replace(PREP_RE, "").trim();
+const ENDINGS = ["ications","ication","ations","ation","ements","ement","antes","ants","ante","ant",
+  "euses","euse","eurs","eur","aient","ions","ion","ais","ait","iez","ez","ons","ent","ees","ee",
+  "es","er","ir","re","s","e"].sort((a,b) => b.length - a.length);
+function stemOf(w){
+  w = dropPrep(w).replace(/^(s'|se |m'|t'|l'|d'|n')/, "");
+  for (const e of ENDINGS) if (w.length - e.length >= 5 && w.endsWith(e)) return w.slice(0, w.length - e.length);
+  return w;
+}
+
 function judge(input, targets){
   const raw = norm(input, false);
   if (!raw) return {v: "miss"};
@@ -459,6 +478,14 @@ function judge(input, targets){
   for (const t of targets) if (bare(raw) === bare(norm(t, false))) return {v: "near", why: "article"};
   // both differ
   for (const t of targets) if (norm(raw, true) === norm(t, true)) return {v: "near", why: "both"};
+  // right word, missing or added preposition: s'opposer / s'opposer à
+  for (const t of targets)
+    if (dropPrep(norm(raw, true)) === dropPrep(norm(t, true))) return {v: "soft", why: "prep"};
+  // right root, wrong form: imprimante / imprimer, s'opposes / s'opposer
+  for (const t of targets){
+    const a = stemOf(norm(raw, true)), b = stemOf(norm(t, true));
+    if (a && a.length >= 5 && a === b) return {v: "soft", why: "forme"};
+  }
   for (const t of targets){
     const a = norm(raw, true), b = norm(t, true);
     if (lev(a, b) <= Math.max(1, Math.floor(b.length / 6))) return {v: "near", why: "typo"};
@@ -516,6 +543,12 @@ function buildQueue(){
 function schedule(c, v){
   const p = prog[c.id] || {i:0, e:2.5, r:0, l:0};
   if (v === "miss"){ p.r=0; p.l=(p.l||0)+1; p.i=0; p.e=Math.max(1.3,p.e-0.2); p.d=Date.now()+6e4; }
+  else if (v === "soft"){
+    // shown as "presque" but scored as an error: producing the wrong form is
+    // exactly the vocabulary/grammar fault being trained. Gentler ease penalty
+    // than a clean miss; same recency, so it comes back within the session.
+    p.r = 0; p.l = (p.l || 0) + 1; p.i = 0; p.e = Math.max(1.3, p.e - 0.1); p.d = Date.now() + 6e4;
+  }
   else if (v === "near"){ p.e=Math.max(1.3,p.e-0.05); p.i=p.r===0?1:Math.max(1,Math.round(p.i*1.25)); p.r=(p.r||0)+1; p.d=Date.now()+p.i*DAY; }
   else { p.r=(p.r||0)+1; p.i=p.r===1?1:p.r===2?3:Math.max(1,Math.round((p.i||1)*p.e)); p.e=Math.min(2.8,p.e+0.08); p.d=Date.now()+p.i*DAY; }
   prog[c.id] = p; dirty.add(chunkOf(c)); save();
@@ -639,10 +672,12 @@ function check(giveUp){
   if (hist.length > HIST_MAX) hist.shift();
   paintNav();
   lastRes = res;
-  const lab = res.v === "ok" ? t.vOk : res.v === "miss" ? t.vMiss
-    : {accent: t.vAccent, article: t.vArticle, both: t.vBoth, typo: t.vTypo}[res.why] || t.vTypo;
+  const lab = verdictLabel(res.v, res.why);
   let note = "";
-  if (res.v === "near"){
+  if (res.v === "soft"){
+    note = t.wrote(esc(typed)) + " " + (res.why === "prep" ? t.whyPrep : t.whyForme);
+  }
+  else if (res.v === "near"){
     note = t.wrote(esc(typed));
     if (res.why === "article") note += " " + t.whyArticle;
     if (res.why === "accent")  note += " " + t.whyAccent;
@@ -723,6 +758,13 @@ function applyLang(){
 }
 function setLang(l){ lang = l; try { localStorage.setItem(LSL, l); } catch(e){} applyLang(); }
 
+function verdictLabel(v, why){
+  const t = T();
+  if (v === "ok") return t.vOk;
+  if (v === "miss") return t.vMiss;
+  return {accent: t.vAccent, article: t.vArticle, both: t.vBoth,
+          typo: t.vTypo, forme: t.vForme, prep: t.vPrep}[why] || t.vTypo;
+}
 function paintNav(){
   const atLive = hpos === -1;
   $("back").disabled = hist.length === 0 || hpos === 0;
@@ -740,8 +782,7 @@ function showReview(){
   const o = c.o ? c.o + " · " + topicLabel(c.o) : "";
   $("tagObj").textContent = o.length > 46 ? o.slice(0, 44) + "…" : o; $("tagObj").hidden = !o;
   $("tagSched").textContent = nextLabel(c);
-  const lab = h.v === "ok" ? t.vOk : h.v === "miss" ? t.vMiss
-    : {accent: t.vAccent, article: t.vArticle, both: t.vBoth, typo: t.vTypo}[h.why] || t.vTypo;
+  const lab = verdictLabel(h.v, h.why);
   $("verdictSlot").innerHTML = `<div class="verdict ${h.v}"><div class="lab">${esc(lab)}</div>
     <div class="ans">${esc(state.dir === "ef" ? c.fr : c.en)}</div></div>`;
   $("go").textContent = t.nextBtn;
