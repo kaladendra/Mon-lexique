@@ -2,7 +2,7 @@
    Strategy: network-first for the page (so an update is never more than one
    launch away), cache-first for static assets. The cache name carries the
    build hash, so a new build gets a new cache and old ones are deleted. */
-const VERSION = "rtlur0-czmt7w";
+const VERSION = "7g3nqt-9nzgm7";
 const CACHE   = "mon-lexique-" + VERSION;
 const CORE = ["./", "./index.html", "./manifest.json", "./favicon-32.png",
               "./favicon.ico", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png"];
