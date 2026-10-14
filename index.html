@@ -230,6 +230,23 @@ dialog#help::backdrop{background:rgba(10,14,20,.55)}
 .help-b .verd{display:flex;flex-direction:column;gap:5px;font-size:13.5px}
 .help-b .verd i{font-style:normal;font-weight:700;margin-right:6px}
 .help-b .verd .v1{color:var(--ok)} .help-b .verd .v2{color:var(--near)} .help-b .verd .v3{color:var(--miss)}
+/* Touch devices: the masthead controls are 50% larger. A 24px circle is well under
+   Apple's 44pt tap target; this brings it to 36px and makes the FR/EN pill easier
+   to hit with a thumb. Pointer-coarse catches iPhone and iPad but leaves desktop be. */
+@media (pointer:coarse){
+  .headright{gap:11px}
+  .helpbtn{width:36px;height:36px;font-size:19.5px}
+  .lang button{font-size:15.5px;padding:6px 14px}
+  .sub{max-width:140px}
+  /* same treatment for the card's own controls: ◀ ▶ and ★ */
+  .meta{gap:10px;padding:10px 14px}
+  .nav{font-size:16.5px;padding:6px 12px}
+  .star{font-size:22.5px;padding:4px 11px}
+  .meta .grow{font-size:11px}
+}
+@media (pointer:coarse) and (max-width:560px){
+  .sub{max-width:92px}
+}
 @media (max-width:560px){.rail{grid-template-columns:repeat(2,1fr)}.prompt{font-size:27px}.brand{font-size:25px}.sub{max-width:120px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
