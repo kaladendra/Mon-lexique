@@ -216,6 +216,16 @@ dialog#search::backdrop{background:rgba(10,14,20,.55)}
   border-radius:999px;padding:5px 12px}
 .lookout a:hover{border-color:var(--accent);background:var(--accent-wash)}
 .lookout a.usage span{font-size:10.5px;color:var(--ink-3);margin-left:5px}
+dialog#xfer{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);
+  padding:0;max-width:560px;width:calc(100% - 32px);box-shadow:var(--shadow)}
+dialog#xfer::backdrop{background:rgba(10,14,20,.55)}
+.xrow{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+#xferBox{width:100%;min-height:104px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;
+  line-height:1.45;padding:9px 11px;border:1.5px solid var(--line-2);border-radius:var(--r);
+  background:var(--paper);color:var(--ink-2);outline:none;resize:vertical;word-break:break-all}
+#xferBox:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
+.xmsg{font-size:12.5px;color:var(--ink-2)}
+.xmsg.bad{color:var(--miss)} .xmsg.good{color:var(--ok)}
 dialog#help{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);
   padding:0;max-width:560px;width:calc(100% - 32px);box-shadow:var(--shadow)}
 dialog#help::backdrop{background:rgba(10,14,20,.55)}
@@ -316,6 +326,24 @@ dialog#help::backdrop{background:rgba(10,14,20,.55)}
     <div class="search-res" id="searchRes"></div>
   </dialog>
 
+  <dialog id="xfer">
+    <div class="help-h"><h2 id="xferTitle"></h2><button type="button" id="xferClose"></button></div>
+    <div class="help-b">
+      <p id="xferWhy"></p>
+      <div class="xrow">
+        <button class="btn" id="xferSave"></button>
+        <button class="btn ghost" id="xferCopy"></button>
+        <label class="btn ghost" for="xferFile" id="xferOpenLbl"></label>
+        <input type="file" id="xferFile" accept="application/json,.json" hidden>
+      </div>
+      <textarea id="xferBox" spellcheck="false" autocomplete="off"></textarea>
+      <div class="xrow">
+        <button class="btn" id="xferLoad"></button>
+        <span class="xmsg" id="xferMsg"></span>
+      </div>
+    </div>
+  </dialog>
+
   <dialog id="help">
     <div class="help-h"><h2>Mon lexique</h2><button type="button" id="helpClose"></button></div>
     <div class="help-b" id="helpBody"></div>
@@ -334,6 +362,11 @@ dialog#help::backdrop{background:rgba(10,14,20,.55)}
         <div class="chips">
           <button class="chip" id="resetSession"></button>
           <button class="chip" id="cramMode" aria-pressed="false"></button>
+        </div>
+      </div>
+      <div class="grp"><span id="lblXfer"></span>
+        <div class="chips">
+          <button class="chip" id="xferBtn"></button>
         </div>
       </div>
     </div>
@@ -396,6 +429,19 @@ const I18N = {
   foot:"<b>Anglais → Français</b> est le sens qui compte : c'est la production qui est évaluée à l'oral.<br>"+
        "Les accents manquants comptent comme « presque » — jamais comme une erreur.<br>"+
        "<b>★</b> ajoute ou retire une carte de <b>Priorité</b> · <b>Mes erreurs</b> se remplit tout seul après 3 échecs.",
+  xferLbl:"Transférer mes progrès",
+  xferBtn:"Exporter ou importer", xferTitle:"Transférer mes progrès",
+  xferWhy:"Chaque copie de l'application garde ses progrès pour elle. Exportez d'ici, "
+         +"puis importez dans l'autre copie : facilité, répétitions et erreurs suivent.",
+  xferSave:"Enregistrer le fichier", xferCopy:"Copier le texte", xferOpen:"Ouvrir un fichier…",
+  xferLoad:"Importer", xferCopied:"Copié.",
+  xferEmpty:"Collez ici le texte exporté, ou ouvrez le fichier.",
+  xferBad:"Texte non reconnu — ce n'est pas un export de Mon lexique.",
+  xferSaved:"Fichier enregistré.",
+  xferNoSave:"Impossible d'enregistrer un fichier ici — utilisez « Copier le texte ».",
+  xferDone:(a,b,c) => a + " carte" + (a>1?"s":"") + ", " + b + " ★ et " + c + " réponse"
+           + (c>1?"s":"") + " acceptée" + (c>1?"s":"") + " importées.",
+  xferNone:"Rien de nouveau à importer : vos progrès ici sont déjà aussi avancés.",
   close:"Fermer",
   help:`<div><h3>Comment ça marche</h3><p>Une carte s'affiche, vous tapez la réponse, <b>Entrée</b> pour vérifier,
    <b>Entrée</b> encore pour passer à la suivante. Le sens par défaut est <b>anglais → français</b> : c'est la
@@ -428,7 +474,7 @@ const I18N = {
    <div><h3>Bon à savoir</h3><p><b>Accents</b> — les boutons sous le champ, ou appui long sur la touche (Mac et iPhone).<br>
      <b>L'horaire</b> — répétition espacée : 1 jour, 3 jours, puis des intervalles qui s'allongent tant que vous
      réussissez. Une carte sue disparaît d'elle-même de la rotation. « Tout réviser » ignore l'horaire.<br>
-     <b>Vos progrès</b> suivent votre compte d'un appareil à l'autre; hors connexion, ils restent dans ce navigateur.</p></div><div><h3>À propos</h3><p><b>Mon lexique</b> v1.0 · 2026-09-15<br>Code et interface sous licence MIT. Vocabulaire : environ 300 cartes de <b>kaladendra</b> (MIT) et environ 2 500 cartes tirées du <i>Lexique — Programme de français langue seconde, niveaux A et B</i> et des <i>aide-mémoire linguistiques</i> du cours C285, <b>École de la fonction publique du Canada</b> (2005 / 2011). © Sa Majesté le Roi du chef du Canada — reproduction permise à des fins personnelles ou publiques, <b>non commerciales</b>. Ce logiciel est donc gratuit pour l'usage personnel et éducatif; la distribution commerciale n'est pas permise.<br>Sans affiliation avec l'École de la fonction publique ni la Commission de la fonction publique. Ne contient aucun contenu d'examen protégé.</p><p id="intg"></p><p id="canon"></p></div>`
+     <b>Vos progrès</b> suivent votre compte d'un appareil à l'autre; hors connexion, ils restent dans ce navigateur.<br><b>Changer de copie</b> — chaque copie de l'appli garde ses progrès pour elle. Dans <i>Listes et réglages</i>, <b>Exporter ou importer</b> enregistre un fichier d'un côté et le relit de l'autre : facilité, répétitions et erreurs suivent. L'import ne peut jamais faire reculer une carte.</p></div><div><h3>À propos</h3><p><b>Mon lexique</b> v1.0 · 2026-09-15<br>Code et interface sous licence MIT. Vocabulaire : environ 300 cartes de <b>kaladendra</b> (MIT) et environ 2 500 cartes tirées du <i>Lexique — Programme de français langue seconde, niveaux A et B</i> et des <i>aide-mémoire linguistiques</i> du cours C285, <b>École de la fonction publique du Canada</b> (2005 / 2011). © Sa Majesté le Roi du chef du Canada — reproduction permise à des fins personnelles ou publiques, <b>non commerciales</b>. Ce logiciel est donc gratuit pour l'usage personnel et éducatif; la distribution commerciale n'est pas permise.<br>Sans affiliation avec l'École de la fonction publique ni la Commission de la fonction publique. Ne contient aucun contenu d'examen protégé.</p><p id="intg"></p><p id="canon"></p></div>`
  },
  en: {
   pick:"Topic", due:"Due", ok:"Right", miss:"Missed", seen:"Cards seen",
@@ -471,6 +517,19 @@ const I18N = {
   foot:"<b>English → French</b> is the direction that matters: the oral test scores production, not recognition.<br>"+
        "A missing accent counts as “almost” — never as an error.<br>"+
        "<b>★</b> adds or removes a card from <b>Priority</b> · <b>My mistakes</b> fills itself after 3 misses.",
+  xferLbl:"Transfer my progress",
+  xferBtn:"Export or import", xferTitle:"Transfer my progress",
+  xferWhy:"Each copy of the app keeps its progress to itself. Export from here, then "
+         +"import into the other copy: ease, repetitions and mistakes all follow.",
+  xferSave:"Save the file", xferCopy:"Copy the text", xferOpen:"Open a file…",
+  xferLoad:"Import", xferCopied:"Copied.",
+  xferEmpty:"Paste the exported text here, or open the file.",
+  xferBad:"Not recognised — this is not a Mon lexique export.",
+  xferSaved:"File saved.",
+  xferNoSave:"A file cannot be saved here — use “Copy the text” instead.",
+  xferDone:(a,b,c) => a + " card" + (a>1?"s":"") + ", " + b + " ★ and " + c + " accepted answer"
+           + (c>1?"s":"") + " imported.",
+  xferNone:"Nothing new to import: your progress here is already at least as far along.",
   close:"Close",
   help:`<div><h3>How it works</h3><p>A card appears, you type the answer, <b>Enter</b> to check, <b>Enter</b> again
    for the next one. The default direction is <b>English → French</b>, because the oral test scores what you can
@@ -503,7 +562,7 @@ const I18N = {
    <div><h3>Worth knowing</h3><p><b>Accents</b> — the buttons under the field, or press and hold the key (Mac and iPhone).<br>
      <b>The schedule</b> — spaced repetition: 1 day, 3 days, then widening intervals for as long as you keep getting
      it right. A card you know drops out of rotation by itself. “Review everything” ignores the schedule.<br>
-     <b>Your progress</b> follows your account between devices; offline, it stays in this browser.</p></div><div><h3>About</h3><p><b>Mon lexique</b> v1.0 · 2026-09-15<br>Code and interface under the MIT Licence. Vocabulary: roughly 300 cards compiled by <b>kaladendra</b> (MIT) and roughly 2,500 from the <i>Lexique — Programme de français langue seconde, niveaux A et B</i> and the <i>aide-mémoire linguistiques</i> of course C285, <b>Canada School of Public Service</b> (2005 / 2011). © His Majesty the King in Right of Canada — reproduction permitted for personal or public purposes, <b>not commercial</b> ones. This package is therefore free for personal and educational use; commercial distribution is not permitted.<br>Not affiliated with, nor endorsed by, the School or the Public Service Commission. Contains no protected test content.</p><p id="intg"></p><p id="canon"></p></div>`
+     <b>Your progress</b> follows your account between devices; offline, it stays in this browser.<br><b>Moving between copies</b> — each copy of the app keeps its progress to itself. Under <i>Lists and settings</i>, <b>Export or import</b> saves a file from one and reads it into the other: ease, repetitions and mistakes all follow. An import can never set a card back.</p></div><div><h3>About</h3><p><b>Mon lexique</b> v1.0 · 2026-09-15<br>Code and interface under the MIT Licence. Vocabulary: roughly 300 cards compiled by <b>kaladendra</b> (MIT) and roughly 2,500 from the <i>Lexique — Programme de français langue seconde, niveaux A et B</i> and the <i>aide-mémoire linguistiques</i> of course C285, <b>Canada School of Public Service</b> (2005 / 2011). © His Majesty the King in Right of Canada — reproduction permitted for personal or public purposes, <b>not commercial</b> ones. This package is therefore free for personal and educational use; commercial distribution is not permitted.<br>Not affiliated with, nor endorsed by, the School or the Public Service Commission. Contains no protected test content.</p><p id="intg"></p><p id="canon"></p></div>`
  }
 };
 let lang = "fr";
@@ -733,6 +792,43 @@ async function initDb(){
   } catch(e){ $("syncDot").className = "dot"; $("syncTxt").textContent = T().syncOff; }
 }
 
+/* ---------------- carrying progress between copies ---------------- */
+/* The artifact and the published copy are separate origins, so neither can see the
+   other's storage. But a card's id is a hash of its fr|en text, so a record written
+   by one copy means the same thing in the other: the history travels as a file.
+   The merge rule is the one the db sync already uses — later due date wins — so an
+   import can only ever move a card forward, never set it back. */
+function xferPayload(){
+  return JSON.stringify({app:"mon-lexique", v:1, at:new Date().toISOString(),
+                         n:Object.keys(prog).length, prog, stars, accepts});
+}
+function xferApply(txt){
+  let d; try { d = JSON.parse(txt); } catch(e){ return null; }
+  if (!d || d.app !== "mon-lexique" || !d.prog || typeof d.prog !== "object") return null;
+  let np = 0, ns = 0, na = 0;
+  for (const k in d.prog){
+    const r = d.prog[k];
+    if (!r || typeof r.d !== "number") continue;
+    if (!prog[k] || r.d > (prog[k].d || 0)){ prog[k] = r; np++; }
+  }
+  stars.add = stars.add || {}; stars.rm = stars.rm || {};
+  const st = d.stars || {};
+  for (const side of ["add", "rm"])
+    for (const k in (st[side] || {})) if (!stars[side][k]){ stars[side][k] = st[side][k]; ns++; }
+  for (const k in (d.accepts || {})){
+    const merged = (accepts[k] || []).slice();
+    for (const a of (d.accepts[k] || []))
+      if (!merged.some(x => String(x).toLowerCase() === String(a).toLowerCase())){ merged.push(a); na++; }
+    if (merged.length) accepts[k] = merged;
+  }
+  if (np || ns || na){
+    for (const c of CARDS) dirty.add(chunkOf(c));
+    save(); saveStars(); saveAccepts();
+    renderChips(); buildQueue(); next(); render();
+  }
+  return {np, ns, na};
+}
+
 /* ---------------- render ---------------- */
 const esc = s => (s||"").replace(/[&<>"]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
 function render(){
@@ -849,6 +945,11 @@ function applyLang(){
   $("helpClose").textContent = t.close;
   $("searchTitle").textContent = t.searchTitle;
   $("searchClose").textContent = t.close;
+  $("lblXfer").textContent = t.xferLbl;   $("xferBtn").textContent = t.xferBtn;
+  $("xferTitle").textContent = t.xferTitle; $("xferWhy").textContent = t.xferWhy;
+  $("xferSave").textContent = t.xferSave; $("xferCopy").textContent = t.xferCopy;
+  $("xferOpenLbl").textContent = t.xferOpen; $("xferLoad").textContent = t.xferLoad;
+  $("xferClose").textContent = t.close;
   $("searchBox").placeholder = t.searchPlaceholder;
   $("searchBtn").title = t.searchTitle;
   if ($("search").open) renderSearch();
@@ -1132,7 +1233,9 @@ $("helpClose").onclick = () => $("help").close();
 $("help").addEventListener("click", e => { if (e.target === $("help")) $("help").close(); });
 $("lang").querySelectorAll("[data-lang]").forEach(b => b.onclick = () => setLang(b.dataset.lang));
 $("answer").addEventListener("keydown", e => { if (e.key === "Enter" && !e.repeat){ e.preventDefault(); armedAt = Date.now(); $("go").click(); } });
+const modalOpen = () => $("help").open || $("search").open || $("xfer").open;
 document.addEventListener("keydown", e => {
+  if (modalOpen()) return;          // ◀ ▶ / s belong to the dialog while one is open
   if (e.key === "ArrowLeft"  && document.activeElement !== $("answer")){ e.preventDefault(); goBack(); return; }
   if (e.key === "ArrowRight" && document.activeElement !== $("answer")){ e.preventDefault(); goFwd(); return; }
   if (e.key === "Enter" && !e.repeat && awaiting && document.activeElement !== $("answer")){ armedAt = Date.now(); $("go").click(); }
@@ -1146,6 +1249,55 @@ document.addEventListener("keydown", e => {
 });
 $("dirChips").querySelectorAll("[data-dir]").forEach(b => b.onclick = () => setDir(b.dataset.dir));
 $("resetSession").onclick = () => { sess = {ok:0, miss:0, seen:0}; render(); };
+function xferSay(txt, kind){ const m = $("xferMsg"); m.textContent = txt; m.className = "xmsg " + (kind || ""); }
+$("xferBtn").onclick = () => { $("xferBox").value = ""; xferSay(""); $("xfer").showModal(); };
+$("xferClose").onclick = () => $("xfer").close();
+$("xfer").addEventListener("click", e => { if (e.target === $("xfer")) $("xfer").close(); });
+/* Inside the Claude viewer an ordinary download link does nothing — handing the
+   viewer a file is what the downloads capability is for. On a plain web page there
+   is no claude runtime, and the link is the right mechanism. Hence both paths. */
+let dl = null, dlAsked = false;
+async function downloader(){
+  if (dlAsked) return dl;
+  dlAsked = true;
+  try { if (typeof claude !== "undefined" && claude.use) dl = await claude.use("downloads"); } catch(e){}
+  return dl;
+}
+$("xferSave").onclick = async () => {
+  const txt = xferPayload();
+  const name = "mon-lexique-" + new Date().toISOString().slice(0, 10) + ".json";
+  if (typeof claude !== "undefined" && claude.use){
+    const d = await downloader();
+    if (!d){ xferSay(T().xferNoSave, "bad"); return; }
+    try { await d.save({filename: name, data: txt}); xferSay(T().xferSaved, "good"); }
+    catch(e){ if (!e || e.code !== "declined") xferSay(T().xferNoSave, "bad"); }
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([txt], {type: "application/json"}));
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+};
+$("xferCopy").onclick = async () => {
+  const txt = xferPayload(); $("xferBox").value = txt;
+  // Safari in an iframe can refuse the clipboard; fall back to selecting the text.
+  try { await navigator.clipboard.writeText(txt); xferSay(T().xferCopied, "good"); }
+  catch(e){ $("xferBox").focus(); $("xferBox").select(); }
+};
+$("xferFile").onchange = e => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { $("xferBox").value = String(r.result || ""); xferSay(""); };
+  r.readAsText(f); e.target.value = "";
+};
+$("xferLoad").onclick = () => {
+  const txt = $("xferBox").value.trim();
+  if (!txt){ xferSay(T().xferEmpty, "bad"); return; }
+  const r = xferApply(txt);
+  if (!r){ xferSay(T().xferBad, "bad"); return; }
+  xferSay((r.np || r.ns || r.na) ? T().xferDone(r.np, r.ns, r.na) : T().xferNone, "good");
+};
 $("cramMode").onclick = e => { state.cram = !state.cram;
   e.currentTarget.setAttribute("aria-pressed", state.cram); buildQueue(); next(); render(); };
 
